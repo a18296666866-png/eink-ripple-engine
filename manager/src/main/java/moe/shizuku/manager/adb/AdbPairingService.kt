@@ -12,7 +12,9 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import moe.shizuku.manager.R
 import moe.shizuku.manager.ShizukuSettings
@@ -56,6 +58,7 @@ class AdbPairingService : Service() {
     }
 
     private val handler = Handler(Looper.getMainLooper())
+    private val pairingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val port = MutableLiveData<Int>()
     private var adbMdns: AdbMdns? = null
 
@@ -157,8 +160,9 @@ class AdbPairingService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        pairingScope.cancel()
         stopSearch()
+        super.onDestroy()
     }
 
     private fun onStart(): Notification {
@@ -167,7 +171,7 @@ class AdbPairingService : Service() {
     }
 
     private fun onInput(code: String, port: Int): Notification {
-        GlobalScope.launch(Dispatchers.IO) {
+        pairingScope.launch {
             val host = "127.0.0.1"
 
             val key = try {
@@ -177,8 +181,8 @@ class AdbPairingService : Service() {
                 return@launch
             }
 
-            AdbPairingClient(host, port, code, key).runCatching {
-                start()
+            runCatching {
+                AdbPairingClient(host, port, code, key).use { it.start() }
             }.onFailure {
                 handleResult(false, it)
             }.onSuccess {

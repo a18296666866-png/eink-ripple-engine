@@ -394,6 +394,10 @@ open class SetupActivity : AppBarActivity() {
 
     private fun openPairing() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getSharedPreferences("auto_pair_guard", MODE_PRIVATE).edit()
+                .putLong("armed_until_elapsed",
+                    android.os.SystemClock.elapsedRealtime() + 5 * 60_000L)
+                .apply()
             startActivity(Intent(this, AdbPairingTutorialActivity::class.java))
         } else {
             openWirelessSettings()

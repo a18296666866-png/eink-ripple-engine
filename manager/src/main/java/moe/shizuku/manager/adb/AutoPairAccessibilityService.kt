@@ -49,8 +49,14 @@ class AutoPairAccessibilityService : AccessibilityService() {
         if (event == null) return
         val rootNode = rootInActiveWindow ?: return
 
-        // 1. 处理配对码抓取逻辑
-        handlePairingCode(rootNode)
+        // Read pairing text only during user-initiated pairing inside Android Settings.
+        val activePackage = event.packageName?.toString().orEmpty()
+        val armedUntil = getSharedPreferences("auto_pair_guard", MODE_PRIVATE)
+            .getLong("armed_until_elapsed", 0L)
+        if (activePackage == "com.android.settings" &&
+            android.os.SystemClock.elapsedRealtime() < armedUntil) {
+            handlePairingCode(rootNode)
+        }
 
         // 2. 处理自动点击版本号
         if (isClickingBuild) {
@@ -85,23 +91,14 @@ class AutoPairAccessibilityService : AccessibilityService() {
                 lastPort = foundPort
                 lastSentTime = currentTime
                 
-                Log.i("AutoPair", "截获配对码: $foundCode, 端口: $foundPort")
-                Toast.makeText(this, "✅ 已截获配对码: $foundCode，正在自动配对...", Toast.LENGTH_LONG).show()
+                Log.i("AutoPair", "接收到无线调试配对信息，已隐藏敏感验证码")
+                Toast.makeText(this, "配对信息已提交，请查看真实配对结果", Toast.LENGTH_LONG).show()
                 
                 // 发送配对指令给底层
+                getSharedPreferences("auto_pair_guard", MODE_PRIVATE).edit()
+                    .remove("armed_until_elapsed").apply()
                 sendPairIntent(foundCode, foundPort)
 
-                // 【核心修复】延迟 1.5 秒后自动跳回 App
-                handler.postDelayed({
-                    try {
-                        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                        launchIntent?.putExtra("PAIR_SUCCESS", true)
-                        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        startActivity(launchIntent)
-                    } catch (e: Exception) {
-                        Log.e("AutoPair", "无法跳转回App", e)
-                    }
-                }, 1500)
             }
         }
     }
@@ -155,10 +152,12 @@ class AutoPairAccessibilityService : AccessibilityService() {
         intent.action = "moe.shizuku.manager.action.DIRECT_PAIR"
         intent.putExtra("pair_code", code)
         intent.putExtra("pairing_port", port)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                startForegroundService(intent)
+            else startService(intent)
+        } catch (e: Throwable) {
+            Log.w("AutoPair", "启动后台配对受系统限制，请回到应用手动重试", e)
         }
     }
 

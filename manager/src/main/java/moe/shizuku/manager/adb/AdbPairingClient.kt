@@ -8,6 +8,7 @@ import java.io.Closeable
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.Socket
+import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.net.ssl.SSLSocket
@@ -201,8 +202,11 @@ class AdbPairingClient(private val host: String, private val port: Int, private 
     }
 
     private fun setupTlsConnection() {
-        socket = Socket(host, port)
-        socket.tcpNoDelay = true
+        socket = Socket().apply {
+            connect(InetSocketAddress(host, port), 5000)
+            soTimeout = 5000
+            tcpNoDelay = true
+        }
 
         val sslContext = key.sslContext
         val sslSocket = sslContext.socketFactory.createSocket(socket, host, port, true) as SSLSocket
