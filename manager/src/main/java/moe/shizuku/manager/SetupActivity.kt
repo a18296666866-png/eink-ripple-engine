@@ -17,6 +17,10 @@ import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.widget.TextView
+import android.widget.FrameLayout
+import androidx.activity.OnBackPressedCallback
+import moe.shizuku.manager.databinding.ActivityInkGlassHomeBinding
+import moe.shizuku.manager.settings.SettingsActivity
 import androidx.annotation.RequiresApi
 import com.google.android.material.button.MaterialButton
 import moe.shizuku.manager.adb.AdbPairingTutorialActivity
@@ -37,6 +41,9 @@ import java.util.concurrent.Executors
 open class SetupActivity : AppBarActivity() {
 
     private lateinit var binding: ActivitySetupBinding
+    private lateinit var homeUi: ActivityInkGlassHomeBinding
+    private var inkWizardOpen = false
+    private lateinit var inkWizardBack: OnBackPressedCallback
     private var bottomNavigationAdjusted = false
 
     private val step1Action get() = findViewById<MaterialButton>(R.id.step1Action)
@@ -71,6 +78,7 @@ open class SetupActivity : AppBarActivity() {
                     val page = if (direction == "NEXT") "下一页" else "上一页"
                     val result = if (rippleSent) "接口已下发" else "接口未下发"
                     binding.setupLastEvent.text = "最近事件：$action · $page · $rawCode · $result"
+                    renderInkGlassHome()
                 }
             }
         }
@@ -83,11 +91,15 @@ open class SetupActivity : AppBarActivity() {
                     isListening = false
                     setupToggleButton.text = "开启监听"
                     setupListenerStatus.text = "状态：输入监听已中断"
+                    renderInkGlassHome()
                 }
             }
         }
     }
     private val configListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in setOf("is_waterfall", "reverse_animation", "ireader_speed", "speed", "hanvon_speed")) {
+            runOnUiThread { renderInkGlassHome() }
+        }
         if (key in setOf("is_waterfall", "reverse_animation", "ireader_speed", "speed", "hanvon_speed") &&
             touchService != null && !serviceExecutor.isShutdown) {
             serviceExecutor.execute {
@@ -107,6 +119,7 @@ open class SetupActivity : AppBarActivity() {
         if (touchService == null) {
             isBinding = false
             setupListenerStatus.text = "状态：服务连接超时"
+            renderInkGlassHome()
         }
     }
 
@@ -116,8 +129,24 @@ open class SetupActivity : AppBarActivity() {
         prefs.registerOnSharedPreferenceChangeListener(configListener)
         targetPackages = prefs.getStringSet("target_pkgs", HashSet())?.toMutableSet() ?: HashSet()
         binding = ActivitySetupBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        supportActionBar?.title = "初始化"
+        homeUi = ActivityInkGlassHomeBinding.inflate(layoutInflater)
+        val host = FrameLayout(this)
+        host.addView(binding.root, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        host.addView(homeUi.root, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        binding.root.visibility = View.GONE
+        setContentView(host)
+        supportActionBar?.hide()
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        inkWizardBack = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = showInkGlassHome()
+        }
+        onBackPressedDispatcher.addCallback(this, inkWizardBack)
+        bindInkGlassActions()
 
         listOf(step1Action, step2Action, step3Action, step4Action, step5Action, step6Action).forEach {
             it.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
@@ -151,7 +180,7 @@ open class SetupActivity : AppBarActivity() {
         setupToggleButton.setOnClickListener { toggleListening() }
         findViewById<TextView>(R.id.navInit).apply {
             text = "首页"
-            setOnClickListener { }
+            setOnClickListener { showInkGlassHome() }
         }
         findViewById<TextView>(R.id.navAnimation).apply {
             text = "翻页动画"
@@ -159,7 +188,7 @@ open class SetupActivity : AppBarActivity() {
                 startActivity(Intent(this@SetupActivity, RippleActivity::class.java).putExtra("tab", "animation"))
             }
         }
-        fitBottomNavigation(binding.setupBottomNav)
+        fitBottomNavigation(homeUi.inkBottomNav)
         binding.refreshButton.setOnClickListener { refreshState() }
         binding.saveInitializationButton.setOnClickListener {
             getSharedPreferences("ripple_prefs", MODE_PRIVATE)
@@ -170,12 +199,14 @@ open class SetupActivity : AppBarActivity() {
         updateTargetButtonText()
         refreshState()
         checkRippleService()
+        renderInkGlassHome()
     }
 
     override fun onResume() {
         super.onResume()
         refreshState()
         checkRippleService()
+        renderInkGlassHome()
         if (touchService != null && !serviceExecutor.isShutdown) {
             serviceExecutor.execute {
                 try { applySettingsToService() }
@@ -210,13 +241,17 @@ open class SetupActivity : AppBarActivity() {
             isBinding = false
             touchService = ITouchService.Stub.asInterface(service)
             setupListenerStatus.text = "状态：服务已连接"
+            renderInkGlassHome()
             serviceExecutor.execute {
                 try {
                     touchService?.registerCallback(listenerCallback)
                     applySettingsToService()
                     syncListeningState()
                 } catch (_: Throwable) {
-                    runOnUiThread { setupListenerStatus.text = "状态：服务连接异常" }
+                    runOnUiThread {
+                        setupListenerStatus.text = "状态：服务连接异常"
+                        renderInkGlassHome()
+                    }
                 }
             }
         }
@@ -228,6 +263,7 @@ open class SetupActivity : AppBarActivity() {
             runOnUiThread {
                 setupListenerStatus.text = "状态：服务断开"
                 setupToggleButton.text = "开启监听"
+                renderInkGlassHome()
             }
         }
     }
@@ -247,10 +283,12 @@ open class SetupActivity : AppBarActivity() {
         if (touchService != null || isBinding) return
         if (!Shizuku.pingBinder()) {
             setupListenerStatus.text = "状态：Shizuku 未连接"
+            renderInkGlassHome()
             return
         }
         isBinding = true
         setupListenerStatus.text = "状态：正在连接服务..."
+        renderInkGlassHome()
         handler.removeCallbacks(timeoutRunnable)
         handler.postDelayed(timeoutRunnable, 5000)
         try {
@@ -258,6 +296,7 @@ open class SetupActivity : AppBarActivity() {
         } catch (_: Throwable) {
             isBinding = false
             setupListenerStatus.text = "状态：服务绑定失败"
+            renderInkGlassHome()
         }
     }
 
@@ -284,6 +323,7 @@ open class SetupActivity : AppBarActivity() {
             isListening = running
             setupToggleButton.text = if (running) "停止监听" else "开启监听"
             setupListenerStatus.text = if (running) "状态：正在监听" else "状态：服务已连接"
+            renderInkGlassHome()
         }
     }
 
@@ -291,9 +331,11 @@ open class SetupActivity : AppBarActivity() {
         val service = touchService
         if (isProcessing || service == null) {
             if (service == null) setupListenerStatus.text = "状态：服务未连接"
+            renderInkGlassHome()
             return
         }
         isProcessing = true
+        renderInkGlassHome()
         if (isListening) {
             isListening = false
             setupToggleButton.text = "开启监听"
@@ -303,6 +345,7 @@ open class SetupActivity : AppBarActivity() {
                 runOnUiThread {
                     isProcessing = false
                     setupListenerStatus.text = "状态：已停止监听"
+                    renderInkGlassHome()
                 }
             }
         } else {
@@ -318,6 +361,7 @@ open class SetupActivity : AppBarActivity() {
                         isListening = active
                         setupToggleButton.text = if (active) "停止监听" else "开启监听"
                         setupListenerStatus.text = if (active) "状态：正在监听" else "状态：监听启动失败"
+                        renderInkGlassHome()
                     }
                 } catch (_: Throwable) {
                     runOnUiThread {
@@ -325,6 +369,7 @@ open class SetupActivity : AppBarActivity() {
                         isProcessing = false
                         setupToggleButton.text = "开启监听"
                         setupListenerStatus.text = "状态：启动监听失败"
+                        renderInkGlassHome()
                     }
                 }
             }
@@ -522,6 +567,153 @@ open class SetupActivity : AppBarActivity() {
             !serviceRunning -> binding.step5Card.visibility = View.VISIBLE
             else -> binding.step6Card.visibility = View.VISIBLE
         }
-        binding.refreshButton.visibility = if (completed == 6) View.VISIBLE else View.VISIBLE
+        binding.refreshButton.visibility = View.VISIBLE
+        renderInkGlassHome()
+    }
+
+    /**
+     * The new home is a live ViewBinding-based screen. The previous six-step
+     * layout remains as a real, interactive connection guide, not a bitmap.
+     */
+    private fun bindInkGlassActions() {
+        homeUi.inkToggleButton.setOnClickListener {
+            if (isProcessing || isBinding) return@setOnClickListener
+            if (touchService != null) toggleListening()
+            else if (Shizuku.pingBinder()) checkRippleService()
+            else showConnectionGuide()
+        }
+        homeUi.inkEffectCard.setOnClickListener { openEffects() }
+        homeUi.inkAppsCard.setOnClickListener { if (!isProcessing) showAppListDialog() }
+        homeUi.inkWizardCard.setOnClickListener { showConnectionGuide() }
+        homeUi.inkDiagnosticCard.setOnClickListener { showDiagnostics() }
+        homeUi.inkNavHome.setOnClickListener { showInkGlassHome() }
+        homeUi.inkNavEffects.setOnClickListener { openEffects() }
+        homeUi.inkNavApps.setOnClickListener { if (!isProcessing) showAppListDialog() }
+        homeUi.inkNavDiagnostics.setOnClickListener { showDiagnostics() }
+        homeUi.inkNavSettings.setOnClickListener { openSettings() }
+        homeUi.inkInfoButton.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("水波纹助手 · INK GLASS")
+                .setMessage("墨水屏翻页动效增强工具。支持触控与实体按键监听，"
+                    + "通过设备厂商接口下发翻页动效。实际波纹方向需在设备上验证。")
+                .setPositiveButton("知道了", null).show()
+        }
+        homeUi.inkSettingsButton.setOnClickListener { openSettings() }
+    }
+
+    private fun openEffects() {
+        startActivity(Intent(this, RippleActivity::class.java).putExtra("tab", "animation"))
+    }
+
+    private fun openSettings() {
+        startActivity(Intent(this, SettingsActivity::class.java))
+    }
+
+    private fun showConnectionGuide() {
+        inkWizardOpen = true
+        inkWizardBack.isEnabled = true
+        homeUi.root.visibility = View.GONE
+        binding.root.visibility = View.VISIBLE
+        supportActionBar?.title = "连接向导"
+        supportActionBar?.show()
+        refreshState()
+    }
+
+    private fun showInkGlassHome() {
+        inkWizardOpen = false
+        inkWizardBack.isEnabled = false
+        binding.root.visibility = View.GONE
+        homeUi.root.visibility = View.VISIBLE
+        supportActionBar?.hide()
+        renderInkGlassHome()
+    }
+
+    private fun showDiagnostics() {
+        val shizukuConnected = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+        val status = when {
+            isListening && touchService != null -> "正在监听"
+            touchService != null -> "服务已连接，未监听"
+            isBinding -> "连接中"
+            else -> "未连接"
+        }
+        val message = buildString {
+            append("设备：").append(Build.MANUFACTURER).append(" ").append(Build.MODEL)
+            append("\n系统：Android ").append(Build.VERSION.RELEASE)
+            append("\nShizuku：").append(if (shizukuConnected) "已连接" else "未连接")
+            append("\n输入服务：").append(status)
+            append("\n\n").append(binding.setupLastEvent.text)
+            append("\n").append(binding.setupLastCommand.text)
+            append("\n\n接口已接受不等于屏幕方向已完成实机验收。")
+        }
+        AlertDialog.Builder(this).setTitle("设备诊断")
+            .setMessage(message)
+            .setPositiveButton("刷新状态") { _, _ ->
+                refreshState()
+                if (touchService != null && !serviceExecutor.isShutdown)
+                    serviceExecutor.execute {
+                        try { syncListeningState() } catch (_: Throwable) {}
+                    }
+            }
+            .setNegativeButton("关闭", null)
+            .show()
+    }
+
+    private fun renderInkGlassHome() {
+        if (!::homeUi.isInitialized) return
+        // Build.* data is read from this phone, never hardcoded to a test device.
+        homeUi.inkDeviceName.text = Build.MODEL?.takeIf { it.isNotBlank() }
+            ?: Build.DEVICE ?: "未知设备"
+        homeUi.inkDeviceOs.text = "Android ${Build.VERSION.RELEASE}"
+        val waterfall = prefs.getBoolean("is_waterfall", false)
+        val reversed = prefs.getBoolean("reverse_animation", false)
+        val style = if (waterfall) "垂幕纹" else "拂风纹"
+        val name = (Build.MANUFACTURER.orEmpty() + " " + Build.BRAND.orEmpty()).lowercase()
+        val speed = when {
+            name.contains("bigme") || name.contains("大我") -> "固定"
+            name.contains("hanvon") || name.contains("汉王") -> {
+                val value = prefs.getInt("hanvon_speed", 100)
+                when (value) { 50 -> "慢"; 100 -> "标准"; 200 -> "快"; else -> "$value" }
+            }
+            else -> {
+                when (prefs.getInt("ireader_speed", prefs.getInt("speed", 64))) {
+                    0 -> "快"
+                    128 -> "慢"
+                    else -> "标准"
+                }
+            }
+        }
+        homeUi.inkEffectTitle.text = "$style · $speed"
+        homeUi.inkEffectSubtitle.text =
+            "速度：$speed  ·  方向：${if (reversed) "反向" else "自动"}"
+
+        val available = runCatching { Shizuku.pingBinder() }.getOrDefault(false)
+        val connected = touchService != null
+        homeUi.inkServiceTitle.text = when {
+            isProcessing -> "正在处理"
+            isListening && connected -> "服务运行中"
+            isBinding -> "正在连接"
+            connected -> "服务已就绪"
+            available -> "等待连接"
+            else -> "尚未连接"
+        }
+        homeUi.inkServiceSubtitle.text = when {
+            isProcessing -> "正在确认后台服务状态"
+            isListening && connected -> "水波纹翻页监听已开启"
+            isBinding -> "正在连接 Shizuku 用户服务"
+            connected -> "后台已连接，监听尚未开启"
+            available -> "Shizuku 可用，请连接输入服务"
+            else -> "请完成连接向导后开启监听"
+        }
+        val enabled = !isProcessing && !isBinding
+        homeUi.inkToggleButton.text = when {
+            isProcessing -> "处理中"
+            isListening && connected -> "Ⅱ  暂停监听"
+            isBinding -> "正在连接"
+            connected -> "开启监听"
+            available -> "连接服务"
+            else -> "连接向导"
+        }
+        homeUi.inkToggleButton.isEnabled = enabled
+        homeUi.inkToggleButton.alpha = if (enabled) 1f else 0.7f
     }
 }
