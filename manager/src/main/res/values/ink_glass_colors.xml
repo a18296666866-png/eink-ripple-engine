@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- All tokens lie on a 16-level black/white ramp. -->
+    <color name="ig_paper">#FFFFFF</color>
+    <color name="ig_ink">#111111</color>
+    <color name="ig_primary">#222222</color>
+    <color name="ig_secondary">#555555</color>
+    <color name="ig_muted">#777777</color>
+    <color name="ig_border">#BBBBBB</color>
+    <color name="ig_divider">#AAAAAA</color>
+    <color name="ig_selected">#EAEAEA</color>
+</resources>
