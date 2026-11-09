@@ -33,7 +33,7 @@ class InkGlassWaveView @JvmOverloads constructor(
         if (w <= 0f || h <= 0f) return
 
         // High white region; gently curved folds behind the title.
-        fill.color = 0xFFF4F4F4.toInt()
+        fill.color = 0xFFEEEEEE.toInt()
         contour.reset()
         contour.moveTo(0f, h * 0.31f)
         contour.cubicTo(w * 0.17f, h * 0.32f, w * 0.37f, h * 0.29f,
@@ -46,7 +46,7 @@ class InkGlassWaveView @JvmOverloads constructor(
         contour.close()
         canvas.drawPath(contour, fill)
 
-        fill.color = 0xFFEAEAEA.toInt()
+        fill.color = 0xFFDDDDDD.toInt()
         contour.reset()
         contour.moveTo(w * 0.24f, h * 0.36f)
         contour.cubicTo(w * 0.43f, h * 0.30f, w * 0.61f, h * 0.24f,
@@ -60,7 +60,7 @@ class InkGlassWaveView @JvmOverloads constructor(
         canvas.drawPath(contour, fill)
 
         // A second wave anchors the lower area, without a shadow or gradient.
-        fill.color = 0xFFF1F1F1.toInt()
+        fill.color = 0xFFEEEEEE.toInt()
         contour.reset()
         contour.moveTo(0f, h * 0.84f)
         contour.cubicTo(w * 0.27f, h * 0.79f, w * 0.42f, h * 0.91f,

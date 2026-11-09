@@ -18,13 +18,14 @@ class SetupNavigationTest {
     @get:Rule val activityRule = ActivityScenarioRule(MainActivity::class.java)
 
     @Test fun initializationShowsControls() {
-        onView(withId(R.id.setupToggleButton)).check(matches(isDisplayed()))
-        onView(withId(R.id.setupTargetButton)).check(matches(isDisplayed()))
-        onView(withId(R.id.setupProgress)).check(matches(isDisplayed()))
+        onView(withId(R.id.inkServiceTitle)).check(matches(isDisplayed()))
+        onView(withId(R.id.inkToggleButton)).check(matches(isDisplayed()))
+        onView(withId(R.id.inkEffectCard)).check(matches(isDisplayed()))
+        onView(withId(R.id.inkBottomNav)).check(matches(isDisplayed()))
     }
 
     @Test fun animationTabShowsBothModes() {
-        onView(withId(R.id.navAnimation)).perform(click())
+        onView(withId(R.id.inkNavEffects)).perform(click())
         onView(withText("拂风纹")).check(matches(isDisplayed()))
         onView(withText("垂幕纹")).check(matches(isDisplayed()))
     }
