@@ -1,10 +1,14 @@
 name: Android Debug QA
 on:
   push:
-    branches: [main, fix/v2-audit-remediation]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: android-debug-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
