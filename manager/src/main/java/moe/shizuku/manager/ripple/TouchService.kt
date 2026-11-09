@@ -18,7 +18,6 @@ class TouchService : ITouchService.Stub() {
     @Volatile private var isWaterfall = false
     @Volatile private var reverseAnimation = false
     @Volatile private var rotation = 0
-    @Volatile private var inputRotationReadAt = 0L
     @Volatile private var maxX = 1080
     @Volatile private var maxY = 1920
     @Volatile private var touchAxesSwapped = false
@@ -53,10 +52,7 @@ class TouchService : ITouchService.Stub() {
     }
     private val whitespaceRegex = Regex("\\s+")
     
-    private val triggerLock = Any()
-    private var lastPageTriggerTime = 0L
-    private var lastPageTriggerSource = ""
-    private var lastPageTriggerNext = false
+    private val pageEventGate = PageEventGate()
 
     private val hanvon = HanvonRipple()
     private var bigme: BigmeRipple? = null
@@ -89,14 +85,14 @@ class TouchService : ITouchService.Stub() {
         isHanvon = hanvon.detect(serviceContext)
         detectedDevice = if (isHanvon) RippleMapping.Device.HANVON else RippleMapping.Device.UNKNOWN
         // 2. 探测掌阅
-        isIreader = try {
+        isIreader = if (!isHanvon) try {
             Class.forName("android.eink.EPDCDevice")
             EpdcHelper.load()
             true
         } catch (e: Throwable) {
             sendLog("掌阅接口不可用: ${e.message}")
             false
-        }
+        } else false
         if (isIreader) detectedDevice = RippleMapping.Device.IREADER
         
         // 3. 探测大我 (跨进程获取 Context)
@@ -122,7 +118,8 @@ class TouchService : ITouchService.Stub() {
             else -> sendLog("启动监听 (当前设备不支持波纹)")
         }
         
-        readerThread = Thread { 
+        val readerGeneration = listeningGeneration
+        readerThread = Thread {
             try {
                 discoverInputSources()
                 parseMaxX()
@@ -239,9 +236,21 @@ class TouchService : ITouchService.Stub() {
                         }
                     }
                 }
-                if (listening) sendLog("输入事件监听已退出")
+                if (listening && readerGeneration == listeningGeneration) {
+                    listening = false
+                    sendLog("输入事件监听已退出，请检查输入设备权限")
+                }
             } catch (e: Exception) {
-                if (listening) sendLog("输入事件监听异常: ${e.message}")
+                if (listening && readerGeneration == listeningGeneration) {
+                    listening = false
+                    sendLog("输入事件监听异常: ${e.message}")
+                }
+            } finally {
+                if (readerGeneration == listeningGeneration) {
+                    val abandoned = process
+                    process = null
+                    destroyProcess(abandoned)
+                }
             }
         }.also { it.start() }
         
@@ -290,11 +299,7 @@ class TouchService : ITouchService.Stub() {
         touchStartedAt = 0L
         gestureRotation = 0
         currentTopPackage = ""
-        synchronized(triggerLock) {
-            lastPageTriggerTime = 0L
-            lastPageTriggerSource = ""
-            lastPageTriggerNext = false
-        }
+        pageEventGate.reset()
         isHanvon = false
         isIreader = false
         isBigme = false
@@ -340,34 +345,8 @@ class TouchService : ITouchService.Stub() {
         }
     }
 
-    private fun currentRotation(): Int {
-        return try {
-            val now = System.currentTimeMillis()
-            if (now - inputRotationReadAt >= 250L) {
-                readInputViewportRotation()?.let {
-                    rotation = it
-                    refreshKeyMapping(it)
-                    inputRotationReadAt = now
-                    return it
-                }
-                inputRotationReadAt = now
-            }
-            val context = serviceContext ?: currentApplicationContext()
-            val displayManager = context?.getSystemService(DisplayManager::class.java)
-            val current = displayManager?.getDisplay(Display.DEFAULT_DISPLAY)?.rotation
-                ?: (context?.getSystemService(Context.WINDOW_SERVICE) as? WindowManager)
-                    ?.defaultDisplay?.rotation
-            if (current != null) {
-                rotation = current
-                refreshKeyMapping(current)
-                current
-            } else {
-                rotation
-            }
-        } catch (_: Throwable) {
-            rotation
-        }
-    }
+    /** Read the rotation previously updated by the low-priority poller. */
+    private fun currentRotation(): Int = rotation
 
     /**
      * Some Hanvon firmware keeps Display.getRotation() at 0 while the input
@@ -556,12 +535,14 @@ class TouchService : ITouchService.Stub() {
                     ?: continue
                 // sc7a20 also exposes ABS_X/ABS_Y, but it is not a touch
                 // panel. Require touch-specific capabilities to exclude it.
-                val hasTouchAxes = block.contains("ABS_MT_POSITION_X") || block.contains("ABS_X")
-                val blockName = Regex("N: Name=\\\"([^\\\"]+)\\\"")
-                    .find(block)?.groupValues?.getOrNull(1).orEmpty()
+                val hasTouchAxes =
+                    (block.contains("ABS_MT_POSITION_X") && block.contains("ABS_MT_POSITION_Y")) ||
+                    (block.contains("ABS_X") && block.contains("ABS_Y"))
+                val blockName = InputDeviceNameParser.name(block)
                 val isTouch = hasTouchAxes &&
                     (block.contains("BTN_TOUCH") || block.contains("02ee") ||
-                        blockName.contains("pen_touch", ignoreCase = true))
+                        blockName.contains("pen_touch", ignoreCase = true)) &&
+                    !blockName.contains("Free3-R", ignoreCase = true)
                 val isKey = block.contains("KEY_VOLUMEUP") || block.contains("KEY_VOLUMEDOWN") ||
                     block.contains("KEY_PAGEUP") || block.contains("KEY_PAGEDOWN") ||
                     block.contains("0254") || block.contains("0255") ||
@@ -613,7 +594,9 @@ class TouchService : ITouchService.Stub() {
     }
     
     /** iReader/EPDC speed flags: 128 slow, 64 medium, 0 fast. */
-    override fun setSpeed(speed: Int) { this.speed = speed }
+    override fun setSpeed(speed: Int) {
+        this.speed = if (speed in listOf(0, 64, 128)) speed else 64
+    }
 
     /** Hanvon firmware speed mode/custom value: normally 50/100/200. */
     override fun setHanvonSpeed(speed: Int) {
@@ -739,19 +722,10 @@ class TouchService : ITouchService.Stub() {
      * kept intact.
      */
     private fun acceptPageTrigger(source: String, next: Boolean): Boolean {
-        val now = System.currentTimeMillis()
-        synchronized(triggerLock) {
-            val elapsed = now - lastPageTriggerTime
-            val window = if (source == "KEY" && lastPageTriggerSource == "KEY") 250L else 180L
-            if (elapsed in 0 until window && next == lastPageTriggerNext) {
-                sendLog("翻页事件已去重：$source ${if (next) "下一页" else "上一页"}")
-                return false
-            }
-            lastPageTriggerTime = now
-            lastPageTriggerSource = source
-            lastPageTriggerNext = next
-            return true
-        }
+        val accepted = pageEventGate.accept(source, next,
+            android.os.SystemClock.elapsedRealtime())
+        if (!accepted) sendLog("已忽略跨源重复翻页事件：$source")
+        return accepted
     }
 
     private fun dispatchRipple(
@@ -772,12 +746,8 @@ class TouchService : ITouchService.Stub() {
             if (!listening || generation != listeningGeneration) return@execute
 
             var rippleSent = false
-            refreshPersistedAnimationSettings()
             val packages = targetPackages
-            // The focused package can change without restarting the listener.
-            // Always refresh it when an allow-list is active; otherwise a stale
-            // package name can silently suppress an otherwise valid animation.
-            if (packages.isNotEmpty()) refreshTopApp()
+            // Foreground package is maintained by the separate polling thread.
             if (packages.isEmpty() || packages.contains(currentTopPackage)) {
                 // Bind the animation to the same rotation snapshot used to
                 // classify this event. Reading rotation again here allows a
@@ -826,23 +796,32 @@ class TouchService : ITouchService.Stub() {
                         "TouchService",
                         "翻页事件 device=$detectedDevice source=$source raw=$rawCode logical=${logicalDirection.name} final=${finalDirection.name} reverse=$reverseSnapshot eventRotation=$eventRotation animationRotation=$animationRotation"
                     )
-                    rippleSent = when {
-                        isHanvon && command != null -> hanvon.prepareDirection(
-                            command.code.toString(),
-                            hanvonSpeedSnapshot.toString(),
-                            animationRotation,
-                            finalDirection == RippleMapping.Direction.NEXT,
-                            waterfallSnapshot
-                        )
-                        isIreader && command != null -> EpdcHelper.nativeSendPageH(command.code)
-                        isBigme && command != null -> bigme?.prepareMode(
-                            command.code,
-                            animationRotation,
-                            finalDirection == RippleMapping.Direction.NEXT,
-                            waterfallSnapshot
-                        ) == true
-                        else -> false
+                    rippleSent = when (detectedDevice) {
+                        RippleMapping.Device.HANVON -> command?.takeIf {
+                            it.type == RippleMapping.CommandType.HANVON_DIRECTION
+                        }?.let {
+                            hanvon.prepareDirection(
+                                it.code.toString(), hanvonSpeedSnapshot.toString(),
+                                animationRotation,
+                                finalDirection == RippleMapping.Direction.NEXT, waterfallSnapshot
+                            )
+                        } == true
+                        RippleMapping.Device.IREADER -> command?.takeIf {
+                            it.type == RippleMapping.CommandType.IREADER_EFFECT
+                        }?.let { EpdcHelper.nativeSendPageH(it.code) } == true
+                        RippleMapping.Device.BIGME -> command?.takeIf {
+                            it.type == RippleMapping.CommandType.BIGME_MODE
+                        }?.let {
+                            bigme?.prepareMode(it.code, animationRotation,
+                                finalDirection == RippleMapping.Direction.NEXT, waterfallSnapshot)
+                        } == true
+                        RippleMapping.Device.UNKNOWN -> false
                     }
+                    android.util.Log.i("RippleAudit", RippleAudit.line(
+                        detectedDevice, pattern, animationRotation, sourceType,
+                        rawCode, logicalDirection, finalDirection, reverseSnapshot,
+                        command, if (rippleSent) "API_ACCEPTED" else "API_REJECTED"
+                    ))
                     val directionCode = when (command?.type) {
                         RippleMapping.CommandType.HANVON_DIRECTION -> "方向码=${command.code}"
                         RippleMapping.CommandType.IREADER_EFFECT -> "效果码=${command.code}"
@@ -852,6 +831,11 @@ class TouchService : ITouchService.Stub() {
                     val rotationText = "事件旋转=$eventRotation，接口旋转=$animationRotation"
                     sendLog("${backendName()} ${if (next) "下一页" else "上一页"}，$rotationText，${if (waterfallSnapshot) "垂幕纹" else "拂风纹"}，$directionCode，${if (rippleSent) "已下发" else "未下发"}")
                 } catch (e: Throwable) {
+                    android.util.Log.e("RippleAudit", RippleAudit.line(
+                        detectedDevice, pattern, animationRotation, sourceType,
+                        rawCode, logicalDirection, finalDirection, reverseSnapshot,
+                        command, "API_EXCEPTION"
+                    ), e)
                     sendLog("下发异常: ${e.message}")
                 }
             } else {
@@ -874,41 +858,26 @@ class TouchService : ITouchService.Stub() {
         }
     }
 
-    private fun backendName(): String {
-        return when {
-            isHanvon -> "汉王"
-            isIreader -> "掌阅"
-            isBigme -> "大我"
-            else -> "未知设备"
-        }
-    }
-
-    /**
-     * Animation settings are shared with the settings-only activity through
-     * the app preference file. Reloading here makes a setting change take
-     * effect on the next event without creating a second Shizuku binding.
-     */
-    private fun refreshPersistedAnimationSettings() {
-        try {
-            val prefs = serviceContext
-                ?.getSharedPreferences("ripple_prefs", Context.MODE_PRIVATE)
-                ?: return
-            speed = prefs.getInt("ireader_speed", prefs.getInt("speed", speed))
-            hanvonSpeed = prefs.getInt("hanvon_speed", hanvonSpeed).coerceIn(30, 300)
-            isWaterfall = prefs.getBoolean("is_waterfall", isWaterfall)
-            reverseAnimation = prefs.getBoolean("reverse_animation", reverseAnimation)
-        } catch (_: Throwable) {
-            // AIDL values remain the fallback if preference access is not
-            // available in a vendor user-service process.
-        }
+    private fun backendName(): String = when (detectedDevice) {
+        RippleMapping.Device.HANVON -> "汉王"
+        RippleMapping.Device.IREADER -> "掌阅"
+        RippleMapping.Device.BIGME -> "大我"
+        RippleMapping.Device.UNKNOWN -> "未知设备"
     }
 
     private fun pollTopApp() {
         while (listening && !Thread.currentThread().isInterrupted) {
-            if (targetPackages.isNotEmpty()) {
-                refreshTopApp()
+            val rot = readInputViewportRotation() ?: runCatching {
+                val ctx = serviceContext ?: currentApplicationContext()
+                ctx?.getSystemService(DisplayManager::class.java)
+                    ?.getDisplay(Display.DEFAULT_DISPLAY)?.rotation
+            }.getOrNull()
+            if (rot != null && rot != rotation) {
+                rotation = rot
+                refreshKeyMapping(rot)
             }
-            try { Thread.sleep(1000) } catch (e: InterruptedException) { break }
+            if (targetPackages.isNotEmpty()) refreshTopApp()
+            try { Thread.sleep(750) } catch (_: InterruptedException) { break }
         }
     }
 
