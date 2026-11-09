@@ -1,0 +1,38 @@
+name: Android Debug QA
+on:
+  push:
+    branches: [main, fix/v2-audit-remediation]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Install Android native components
+        run: |
+          sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'cmake;3.22.1' 'ndk;25.2.9519653'
+      - name: Unit tests and Debug APK
+        run: ./gradlew :manager:testDebugUnitTest :manager:assembleDebug --no-daemon --stacktrace
+      - name: Publish Debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eink-ripple-debug-apk
+          path: manager/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

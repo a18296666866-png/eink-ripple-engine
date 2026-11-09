@@ -1,5 +1,15 @@
 import java.nio.file.Paths
 
+// Release signing is optional. Never commit signing.properties or the keystore.
+def releaseFile = rootProject.file('signing.properties')
+def releaseProps = new Properties()
+if (releaseFile.isFile()) releaseFile.withInputStream { releaseProps.load(it) }
+def requiredReleaseKeys = ['KEYSTORE_FILE', 'KEYSTORE_PASSWORD', 'KEYSTORE_ALIAS', 'KEYSTORE_ALIAS_PASSWORD']
+def hasReleaseSigning = requiredReleaseKeys.every { releaseProps.getProperty(it) }
+if (releaseFile.isFile() && !hasReleaseSigning) {
+    throw new GradleException('Incomplete signing.properties; expected all KEYSTORE_* keys')
+}
+
 plugins {
     id('com.android.application')
     id('kotlin-android')
@@ -10,13 +20,7 @@ plugins {
 
 android {
 
-    
-        externalNativeBuild {
-        cmake {
-            path 'src/main/cpp/CMakeLists.txt'
-            version "3.22.1+"
-        }
-    }
+
 
     namespace 'moe.shizuku.manager'
     defaultConfig {
@@ -40,15 +44,22 @@ android {
         prefab true
     }
     signingConfigs {
-        sign
+        release {
+            if (hasReleaseSigning) {
+                storeFile rootProject.file(releaseProps.getProperty('KEYSTORE_FILE'))
+                storePassword releaseProps.getProperty('KEYSTORE_PASSWORD')
+                keyAlias releaseProps.getProperty('KEYSTORE_ALIAS')
+                keyPassword releaseProps.getProperty('KEYSTORE_ALIAS_PASSWORD')
+            }
+        }
     }
     buildTypes {
         debug {
             defaultConfig.minSdk 24
-            signingConfig signingConfigs.sign
+            signingConfig signingConfigs.debug
         }
         release {
-            signingConfig signingConfigs.sign
+            if (hasReleaseSigning) signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -57,6 +68,7 @@ android {
     externalNativeBuild {
         cmake {
             path 'src/main/jni/CMakeLists.txt'
+            version '3.22.1'
         }
     }
     kotlinOptions {
@@ -152,6 +164,8 @@ configurations.configureEach {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test:runner:1.5.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4'
@@ -207,4 +221,3 @@ dependencies {
     implementation 'me.zhanghai.android.appiconloader:appiconloader:1.5.0'
 }
 
-apply from: rootProject.file('signing.gradle')
