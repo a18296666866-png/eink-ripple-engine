@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFFFF"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#FFFFFFFF"
+        android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="48dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="48dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/setupTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="墨水屏翻页助手"
+            android:textColor="#FF111111"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/setupSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="完成初始化后，监听触摸和按键翻页"
+            android:textColor="#FF666666"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="初始化进度"
+            android:textColor="#FF555555"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/setupProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="10dp"
+            android:max="6"
+            android:progress="0" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/setupProgressText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="初始化 0 / 6"
+                android:textColor="#FF666666"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/setupRemaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="还差 6 步"
+                android:textColor="#FF111111"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="完成情况"
+            android:textColor="#FF555555"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/setupChecklist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="#FFF7F7F7"
+            android:lineSpacingExtra="4dp"
+            android:padding="18dp"
+            android:textColor="#FF555555"
+            android:textSize="15sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step1Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_1" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step2Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_2" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step3Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_3" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step4Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_4" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step5Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_5" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/step6Card"
+            style="@style/SetupStepCard"
+            android:visibility="gone"
+            app:strokeColor="#FF111111">
+            <include layout="@layout/item_setup_step_6" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="监听设置"
+            android:textColor="#FF555555"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/setupListenerStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="状态：等待连接"
+            android:textColor="#FF111111"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setupTargetButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="所有应用"
+                android:textColor="#FF111111"
+                app:strokeColor="#FF111111" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setupToggleButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="开启监听"
+                android:textColor="#FF111111"
+                app:strokeColor="#FF111111" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/refreshButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="刷新状态"
+            android:textColor="#FF111111"
+            app:strokeColor="#FF111111" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveInitializationButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="保存初始化设置"
+            android:textColor="#FF111111"
+            app:strokeColor="#FF111111" />
+
+    </LinearLayout>
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#FFBDBDBD" />
+
+    <LinearLayout
+        android:id="@+id/setupBottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:orientation="horizontal"
+        android:paddingStart="48dp"
+        android:paddingEnd="48dp">
+
+        <TextView
+            android:id="@+id/navInit"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="初始化"
+            android:textColor="#FF111111"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/navAnimation"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="动画"
+            android:textColor="#FF777777"
+            android:textSize="15sp" />
+    </LinearLayout>
+</LinearLayout>

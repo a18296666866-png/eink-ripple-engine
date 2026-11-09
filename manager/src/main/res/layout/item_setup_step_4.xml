@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="22dp">
+    <TextView android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="4" android:textColor="#FFFFFFFF" android:textSize="24sp" android:textStyle="bold" android:background="#FF111111" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="18dp" android:orientation="vertical">
+        <TextView android:id="@+id/step4Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="配对码配对" android:textColor="#FF000000" android:textSize="20sp" android:textStyle="bold" />
+        <TextView android:id="@+id/step4Description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="在无线调试页面选择“使用配对码配对”，应用会自动抓取验证码。" android:textColor="#FF333333" android:textSize="15sp" />
+        <TextView android:id="@+id/step4Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="未完成" android:textColor="#FF333333" android:textSize="15sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/step4Action" style="@style/Widget.Material3.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="开始配对" android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+</LinearLayout>

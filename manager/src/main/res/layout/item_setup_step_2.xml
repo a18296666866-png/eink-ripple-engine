@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="22dp">
+    <TextView android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="2" android:textColor="#FFFFFFFF" android:textSize="24sp" android:textStyle="bold" android:background="#FF111111" />
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="18dp" android:orientation="vertical">
+        <TextView android:id="@+id/step2Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="赋权软件无障碍权限" android:textColor="#FF000000" android:textSize="20sp" android:textStyle="bold" />
+        <TextView android:id="@+id/step2Description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="用于读取系统配对页中的配对码并自动完成配对。" android:textColor="#FF333333" android:textSize="15sp" />
+        <TextView android:id="@+id/step2Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="未完成" android:textColor="#FF333333" android:textSize="15sp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/step2Action" style="@style/Widget.Material3.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="去授权" android:textColor="#FFFFFFFF" />
+    </LinearLayout>
+</LinearLayout>

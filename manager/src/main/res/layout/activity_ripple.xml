@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="50dp">
+        
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="状态：正在检查 Shizuku..."
+            android:textSize="18sp"
+            android:textColor="#FF000000"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="【等待操作】"
+            android:textSize="16sp"
+            android:textColor="#FF000000"
+            android:padding="30dp"
+            android:lineSpacingExtra="10dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="\n拓展功能："
+            android:textSize="16sp"
+            android:textColor="#FF000000" />
+
+        <RadioGroup
+            android:id="@+id/modeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <RadioButton android:id="@+id/rbModeTouch" android:text="触屏模式" android:textColor="#FF000000" />
+            <RadioButton android:id="@+id/rbModeKey" android:text="音量模式" android:textColor="#FF000000" />
+            <RadioButton android:id="@+id/rbModeAll" android:text="全部模式" android:textColor="#FF000000" />
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/speedGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+            <RadioButton android:id="@+id/rbSpeedSlow" android:text="慢速波纹" android:textColor="#FF000000" />
+            <RadioButton android:id="@+id/rbSpeedMid" android:text="中速波纹" android:textColor="#FF000000" />
+            <RadioButton android:id="@+id/rbSpeedFast" android:text="高速波纹" android:textColor="#FF000000" />
+        </RadioGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp">
+
+            <Button
+                android:id="@+id/targetBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="所有应用"
+                android:textColor="#FF000000"
+                android:textSize="16sp" />
+
+            <Button
+                android:id="@+id/toggleBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="开启监听"
+                android:textColor="#FF000000"
+                android:textSize="16sp"
+                android:layout_marginStart="20dp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
