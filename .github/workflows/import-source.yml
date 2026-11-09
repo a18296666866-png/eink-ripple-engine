@@ -1,0 +1,51 @@
+name: Import upstream Android source
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout destination
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout pinned source including submodules
+        uses: actions/checkout@v4
+        with:
+          repository: a18296666866-png/eink-page-turn-assistant
+          ref: ad84a5e28c899fdbd4cda288cf9d94497fe575c0
+          path: source-worktree
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Import source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp source-worktree/README.md LEGACY_UPSTREAM_README.md
+          rsync -a --exclude='.git' --exclude='.gitmodules' --exclude='README.md' \
+            --exclude='.github/workflows' --exclude='out/' \
+            source-worktree/ ./
+          rm -rf source-worktree
+          test -f manager/src/main/java/moe/shizuku/manager/ripple/TouchService.kt
+          test -f manager/src/main/java/moe/shizuku/manager/ripple/RippleMapping.kt
+          test -f manager/src/main/jni/epdc_jni.cpp
+          test -f api/manifest.gradle
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes required"
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              commit -m "feat: import pinned upstream Android source"
+          git push origin HEAD:main
