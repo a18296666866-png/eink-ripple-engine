@@ -1,0 +1,551 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ig_paper">
+
+    <moe.shizuku.manager.ui.InkGlassWaveView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <ScrollView
+            android:id="@+id/inkScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="false"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="18dp"
+                android:paddingTop="26dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="22dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="80dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/inkTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-black"
+                            android:text="水波纹助手"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="32sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="sans-serif"
+                            android:letterSpacing="0.27"
+                            android:text="INK GLASS  V1.0"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="11sp" />
+
+                        <View
+                            android:layout_width="24dp"
+                            android:layout_height="3dp"
+                            android:layout_marginTop="13dp"
+                            android:background="@color/ig_secondary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:letterSpacing="0.1"
+                            android:text="墨水屏翻页动效增强工具"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:orientation="horizontal">
+
+                        <ImageButton
+                            android:id="@+id/inkInfoButton"
+                            android:layout_width="40dp"
+                            android:layout_height="48dp"
+                            android:background="@android:color/transparent"
+                            android:contentDescription="关于水波纹助手"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_outline_info_24"
+                            android:tint="@color/ig_ink" />
+
+                        <ImageButton
+                            android:id="@+id/inkSettingsButton"
+                            android:layout_width="40dp"
+                            android:layout_height="48dp"
+                            android:background="@android:color/transparent"
+                            android:contentDescription="打开设置"
+                            android:padding="7dp"
+                            android:src="@drawable/ic_settings_outline_24dp"
+                            android:tint="@color/ig_ink" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/inkServiceCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="48dp"
+                    android:background="@drawable/ink_glass_card"
+                    android:gravity="center_vertical"
+                    android:minHeight="112dp"
+                    android:orientation="horizontal"
+                    android:paddingStart="18dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/inkServiceTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif"
+                            android:text="正在检查服务"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="23sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/inkServiceSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:maxLines="2"
+                            android:text="正在读取实际监听状态"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="50dp"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@color/ig_divider" />
+
+                    <TextView
+                        android:id="@+id/inkToggleButton"
+                        android:layout_width="120dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/ink_glass_primary"
+                        android:contentDescription="开启或停止水波纹翻页监听"
+                        android:gravity="center"
+                        android:minHeight="48dp"
+                        android:text="正在连接"
+                        android:textColor="@color/ig_paper"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/ink_glass_card"
+                    android:minHeight="100dp"
+                    android:orientation="horizontal"
+                    android:padding="15dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:paddingStart="9dp"
+                        android:paddingEnd="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="当前设备"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/inkDeviceName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="正在读取"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/inkDeviceOs"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="Android"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="64dp"
+                        android:layout_gravity="center_vertical"
+                        android:background="@color/ig_divider" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:paddingStart="18dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="当前效果"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/inkEffectTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="拂风纹 · 标准"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="17sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/inkEffectSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="速度：标准  ·  方向：自动"
+                            android:textColor="@color/ig_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="26dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/inkEffectCard"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ink_glass_card"
+                        android:clickable="true"
+                        android:contentDescription="翻页效果，动画样式、速度与方向"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="17dp"
+                        android:paddingEnd="11dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="翻页效果"
+                                android:textColor="@color/ig_ink"
+                                android:textSize="19sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="2"
+                                android:text="动画样式、速度与方向"
+                                android:textColor="@color/ig_secondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="21dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="›"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="28sp" />
+                    </LinearLayout>
+
+                    <Space
+                        android:layout_width="12dp"
+                        android:layout_height="1dp" />
+
+                    <LinearLayout
+                        android:id="@+id/inkAppsCard"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ink_glass_card"
+                        android:clickable="true"
+                        android:contentDescription="应用管理，选择监听的阅读应用"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="17dp"
+                        android:paddingEnd="11dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="应用管理"
+                                android:textColor="@color/ig_ink"
+                                android:textSize="19sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="2"
+                                android:text="选择监听的阅读应用"
+                                android:textColor="@color/ig_secondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="21dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="›"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="28sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:id="@+id/inkWizardCard"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ink_glass_card"
+                        android:clickable="true"
+                        android:contentDescription="连接向导，首次使用与快速配置"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="17dp"
+                        android:paddingEnd="11dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="连接向导"
+                                android:textColor="@color/ig_ink"
+                                android:textSize="19sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="2"
+                                android:text="首次使用与快速配置"
+                                android:textColor="@color/ig_secondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="21dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="›"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="28sp" />
+                    </LinearLayout>
+
+                    <Space
+                        android:layout_width="12dp"
+                        android:layout_height="1dp" />
+
+                    <LinearLayout
+                        android:id="@+id/inkDiagnosticCard"
+                        android:layout_width="0dp"
+                        android:layout_height="96dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ink_glass_card"
+                        android:clickable="true"
+                        android:contentDescription="设备诊断，检测兼容性与运行状态"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="17dp"
+                        android:paddingEnd="11dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="设备诊断"
+                                android:textColor="@color/ig_ink"
+                                android:textSize="19sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:maxLines="2"
+                                android:text="检测兼容性与运行状态"
+                                android:textColor="@color/ig_secondary"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="21dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="›"
+                            android:textColor="@color/ig_ink"
+                            android:textSize="28sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <LinearLayout
+            android:id="@+id/inkBottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="7dp"
+            android:layout_marginEnd="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/ink_glass_nav"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="5dp">
+
+            <TextView
+                android:id="@+id/inkNavHome"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/ink_glass_selected"
+                android:contentDescription="首页，当前页面"
+                android:gravity="center"
+                android:text="首页"
+                android:textColor="@color/ig_ink"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/inkNavEffects"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="效果"
+                android:textColor="@color/ig_ink"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/inkNavApps"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="应用"
+                android:textColor="@color/ig_ink"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/inkNavDiagnostics"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="诊断"
+                android:textColor="@color/ig_ink"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/inkNavSettings"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="设置"
+                android:textColor="@color/ig_ink"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
