@@ -23,7 +23,10 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - uses: android-actions/setup-android@v3
+      - name: Use preinstalled Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          which sdkmanager
       - name: Install Android native components
         run: |
           sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'cmake;3.22.1' 'ndk;25.2.9519653'
