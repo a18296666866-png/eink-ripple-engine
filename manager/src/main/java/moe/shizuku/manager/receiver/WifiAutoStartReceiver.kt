@@ -32,16 +32,21 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                 if (!Shizuku.pingBinder()) {
                     Log.i("WifiAutoStart", "检测到 Wi-Fi 连接，准备自动开启无线调试...")
                     
-                    // 1. 尝试通过 Shizuku 权限强制开启系统无线调试（前提是 App 已经有 WRITE_SECURE_SETTINGS 权限）
-                    try {
-                        Settings.Global.putInt(context.contentResolver, "adb_wifi_enabled", 1)
-                        Log.i("WifiAutoStart", "已尝试开启系统无线调试开关")
-                    } catch (e: Exception) {
-                        Log.e("WifiAutoStart", "开启无线调试失败（缺 WRITE_SECURE_SETTINGS 权限）: ${e.message}")
+                    // System-protected setting writes require an explicit permission grant.
+                    val enabled = try {
+                        Settings.Global.getInt(context.contentResolver, "adb_wifi_enabled", 0) == 1
+                    } catch (_: Throwable) { false }
+                    if (!enabled && context.checkSelfPermission(
+                            android.Manifest.permission.WRITE_SECURE_SETTINGS
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        try { Settings.Global.putInt(context.contentResolver, "adb_wifi_enabled", 1) }
+                        catch (error: Throwable) { Log.w("WifiAutoStart", "无法自动开启无线调试", error) }
                     }
-
-                    // 2. 扫描连接端口并拉起 StarterActivity
-                    scanPortAndStart(context)
+                    val ready = try {
+                        Settings.Global.getInt(context.contentResolver, "adb_wifi_enabled", 0) == 1
+                    } catch (_: Throwable) { false }
+                    if (ready) scanPortAndStart(context)
+                    else Log.w("WifiAutoStart", "需要在设置中手动启用无线调试")
                 }
             }, 2000)
         }
@@ -74,7 +79,10 @@ class WifiAutoStartReceiver : BroadcastReceiver() {
                             startIntent.putExtra(StarterActivity.EXTRA_HOST, "127.0.0.1")
                             startIntent.putExtra(StarterActivity.EXTRA_PORT, port)
                             startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(startIntent)
+                            try { context.startActivity(startIntent) }
+                            catch (error: Throwable) {
+                                Log.w("WifiAutoStart", "系统限制后台启动页面，请手动进入应用", error)
+                            }
                         }
                     })
                 }

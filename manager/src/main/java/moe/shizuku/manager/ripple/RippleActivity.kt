@@ -287,7 +287,7 @@ open class RippleActivity : AppBarActivity() {
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(48), dp(30), dp(48), dp(30))
+            setPadding(dp(24), dp(30), dp(24), dp(30))
             setBackgroundColor(Color.WHITE)
         }
         val scroll = ScrollView(this).apply {
@@ -513,8 +513,8 @@ open class RippleActivity : AppBarActivity() {
             })
         }
 
-        content.addView(sectionTitle("监听开关"), LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = if (isHome) dp(24) else dp(18)
+        if (isHome) content.addView(sectionTitle("监听开关"), LinearLayout.LayoutParams(-1, -2).apply {
+            topMargin = dp(24)
         })
         val btnRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -554,9 +554,8 @@ open class RippleActivity : AppBarActivity() {
             setBackground(createBlackBorder())
             setPadding(dp(12), dp(14), dp(12), dp(14))
             setOnClickListener {
-                applySettingsToService()
                 prefs.edit().putBoolean("animation_configured", true).apply()
-                Toast.makeText(this@RippleActivity, "设置已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@RippleActivity, "配置已保存；请返回首页确认同步", Toast.LENGTH_LONG).show()
             }
         }
         if (isAnimation) content.addView(saveButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
@@ -600,7 +599,7 @@ open class RippleActivity : AppBarActivity() {
         updateTargetBtnText()
         // SetupActivity is the single owner of the Shizuku user service.
         // This page only edits persisted animation settings.
-        statusText.text = "设置已保存，返回首页后手动开启监听"
+        statusText.text = "配置保存后将请求同步；返回首页查看实际监听状态"
     }
 
     private fun fitBottomNavigation(view: View) {
@@ -723,17 +722,28 @@ open class RippleActivity : AppBarActivity() {
         isProcessing = true
         val pm = packageManager
         val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        val userApps = packages.filter { it.packageName != packageName && (it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 }.sortedBy { it.loadLabel(pm).toString() }
+        val userApps = packages.filter { app ->
+            if (app.packageName == packageName) false else {
+                val label = app.loadLabel(pm).toString()
+                pm.getLaunchIntentForPackage(app.packageName) != null ||
+                    listOf("reader", "ireader", "hanvon", "bigme", "阅读", "读书").any {
+                        label.contains(it, ignoreCase = true) ||
+                            app.packageName.contains(it, ignoreCase = true)
+                    }
+            }
+        }.sortedBy { it.loadLabel(pm).toString() }
 
         val names = userApps.map { it.loadLabel(pm).toString() }.toTypedArray()
         val pkgs = userApps.map { it.packageName }.toTypedArray()
-        val checkedItems = userApps.map { targetPackages.contains(it.packageName) }.toBooleanArray()
+        val draftPackages = targetPackages.toMutableSet()
+        val checkedItems = userApps.map { draftPackages.contains(it.packageName) }.toBooleanArray()
 
         val dialog = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Light_Dialog_NoActionBar)
             .setTitle("选择需要监听的软件 (可多选)")
-            .setMultiChoiceItems(names, checkedItems) { _, which, isChecked -> if (isChecked) targetPackages.add(pkgs[which]) else targetPackages.remove(pkgs[which]) }
+            .setMultiChoiceItems(names, checkedItems) { _, which, isChecked -> if (isChecked) draftPackages.add(pkgs[which]) else draftPackages.remove(pkgs[which]) }
             .setPositiveButton("确定") { _, _ ->
-                isProcessing = false; prefs.edit().putStringSet("target_pkgs", targetPackages).apply(); updateTargetBtnText()
+                isProcessing = false; targetPackages = draftPackages
+                prefs.edit().putStringSet("target_pkgs", targetPackages).apply(); updateTargetBtnText()
                 val packages = targetPackages.toTypedArray()
                 runServiceCommand("应用监听范围") { it.setTargetPackages(packages) }
             }

@@ -57,7 +57,7 @@ if (propFile.canRead()) {
     props.load(new FileInputStream(propFile))
 
     if (props != null) {
-        if (props["api.useLocal"].equals("true")) {
+        if ("true" == props.getProperty("api.useLocal")) {
             root = props["api.dir"]
         }
     }
@@ -82,4 +82,8 @@ include ':server-shared'
 project(':server-shared').projectDir = file("$root${File.separator}server-shared")
 
 include ':hidden-api-stub'
-project(':hidden-api-stub').projectDir = file("$root${File.separator}hidden-api-stub")
+def hiddenStubDir = file("$root${File.separator}hidden-api-stub")
+if (!hiddenStubDir.isDirectory()) {
+    hiddenStubDir = file("$root${File.separator}demo-hidden-api-stub")
+}
+project(':hidden-api-stub').projectDir = hiddenStubDir

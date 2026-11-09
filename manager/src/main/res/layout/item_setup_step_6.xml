@@ -3,7 +3,7 @@
     <TextView android:layout_width="58dp" android:layout_height="58dp" android:gravity="center" android:text="6" android:textColor="#FFFFFFFF" android:textSize="24sp" android:textStyle="bold" android:background="#FF111111" />
     <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="18dp" android:orientation="vertical">
         <TextView android:id="@+id/step6Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="设置水波纹" android:textColor="#FF000000" android:textSize="20sp" android:textStyle="bold" />
-        <TextView android:id="@+id/step6Description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="选择掌阅、汉王或大我接口，设置拂风纹/垂幕纹、速度和触发方式。" android:textColor="#FF333333" android:textSize="15sp" />
+        <TextView android:id="@+id/step6Description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="设备接口自动识别，设置拂风纹或垂幕纹及翻页速度。" android:textColor="#FF333333" android:textSize="15sp" />
         <TextView android:id="@+id/step6Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="未完成" android:textColor="#FF333333" android:textSize="15sp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/step6Action" style="@style/Widget.Material3.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="设置波纹" android:textColor="#FFFFFFFF" />
     </LinearLayout>
