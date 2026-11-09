@@ -17,7 +17,7 @@ internal object HanvonRippleMapper : VendorRippleMapper {
             else RippleMapping.Direction.PREVIOUS
         } else direction
         return (if (pattern == RippleMapping.Pattern.WIND) wind else curtain)
-            [rotationIndex(rotation)].forDirection(actual)
+            .get(rotationIndex(rotation)).forDirection(actual)
     }
 
     override fun keyDirection(rotation: Int, code: String): RippleMapping.Direction? =

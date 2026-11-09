@@ -13,7 +13,7 @@ internal object IreaderRippleMapper : VendorRippleMapper {
     override fun baseCode(pattern: RippleMapping.Pattern, rotation: Int,
         source: RippleMapping.Source, direction: RippleMapping.Direction): Int =
         (if (pattern == RippleMapping.Pattern.WIND) wind else curtain)
-            [rotationIndex(rotation)].forDirection(direction)
+            .get(rotationIndex(rotation)).forDirection(direction)
 
     override fun keyDirection(rotation: Int, code: String): RippleMapping.Direction? {
         val reverse = rotation == Surface.ROTATION_180 || rotation == Surface.ROTATION_270
