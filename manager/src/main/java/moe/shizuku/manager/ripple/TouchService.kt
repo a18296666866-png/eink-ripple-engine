@@ -37,7 +37,7 @@ class TouchService : ITouchService.Stub() {
     private var gestureRotation = 0
     
     @Volatile private var currentTopPackage = ""
-    private var callback: ITouchCallback? = null
+    @Volatile private var callback: ITouchCallback? = null
 
     @Volatile private var process: Process? = null
     @Volatile private var readerThread: Thread? = null

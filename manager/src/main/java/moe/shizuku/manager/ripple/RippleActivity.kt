@@ -722,7 +722,16 @@ open class RippleActivity : AppBarActivity() {
         isProcessing = true
         val pm = packageManager
         val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        val userApps = packages.filter { it.packageName != packageName && (it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 }.sortedBy { it.loadLabel(pm).toString() }
+        val userApps = packages.filter { app ->
+            if (app.packageName == packageName) false else {
+                val label = app.loadLabel(pm).toString()
+                pm.getLaunchIntentForPackage(app.packageName) != null ||
+                    listOf("reader", "ireader", "hanvon", "bigme", "阅读", "读书").any {
+                        label.contains(it, ignoreCase = true) ||
+                            app.packageName.contains(it, ignoreCase = true)
+                    }
+            }
+        }.sortedBy { it.loadLabel(pm).toString() }
 
         val names = userApps.map { it.loadLabel(pm).toString() }.toTypedArray()
         val pkgs = userApps.map { it.packageName }.toTypedArray()

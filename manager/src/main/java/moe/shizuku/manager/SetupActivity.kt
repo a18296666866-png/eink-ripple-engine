@@ -339,7 +339,16 @@ open class SetupActivity : AppBarActivity() {
         isProcessing = true
         val pm = packageManager
         val userApps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-            .filter { it.packageName != packageName && (it.flags and ApplicationInfo.FLAG_SYSTEM) == 0 }
+            .filter { app ->
+                if (app.packageName == packageName) false else {
+                    val label = app.loadLabel(pm).toString()
+                    pm.getLaunchIntentForPackage(app.packageName) != null ||
+                        listOf("reader", "ireader", "hanvon", "bigme", "阅读", "读书").any {
+                            label.contains(it, ignoreCase = true) ||
+                                app.packageName.contains(it, ignoreCase = true)
+                        }
+                }
+            }
             .sortedBy { it.loadLabel(pm).toString() }
         val names = userApps.map { it.loadLabel(pm).toString() }.toTypedArray()
         val packages = userApps.map { it.packageName }.toTypedArray()

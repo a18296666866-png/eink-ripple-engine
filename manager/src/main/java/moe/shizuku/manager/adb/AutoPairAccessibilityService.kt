@@ -67,6 +67,13 @@ class AutoPairAccessibilityService : AccessibilityService() {
     private fun handlePairingCode(rootNode: AccessibilityNodeInfo) {
         val allTexts = mutableListOf<String>()
         collectTexts(rootNode, allTexts)
+        val pairingScreen = allTexts.any { text ->
+            text.contains("无线调试") ||
+                text.contains("Wireless debugging", ignoreCase = true) ||
+                text.contains("配对码") ||
+                text.contains("pairing code", ignoreCase = true)
+        }
+        if (!pairingScreen) return
 
         var foundCode: String? = null
         var foundPort = -1
