@@ -24,6 +24,7 @@ import moe.shizuku.manager.databinding.ActivitySetupBinding
 import moe.shizuku.manager.home.AdbDialogFragment
 import moe.shizuku.manager.ripple.RippleActivity
 import moe.shizuku.manager.ripple.ITouchService
+import moe.shizuku.manager.ripple.ITouchCallback
 import moe.shizuku.manager.ripple.TouchService
 import moe.shizuku.manager.app.AppBarActivity
 import rikka.shizuku.Shizuku
@@ -56,10 +57,48 @@ open class SetupActivity : AppBarActivity() {
 
     private lateinit var prefs: android.content.SharedPreferences
     private var targetPackages: MutableSet<String> = HashSet()
-    private var touchService: ITouchService? = null
+    @Volatile private var touchService: ITouchService? = null
     private var isBinding = false
     private var isProcessing = false
     private var isListening = false
+    private val listenerCallback = object : ITouchCallback.Stub() {
+        override fun onPageEvent(source: String, direction: String, rawCode: String,
+            startX: Int, startY: Int, endX: Int, endY: Int,
+            durationMs: Int, rippleSent: Boolean) {
+            runOnUiThread {
+                if (!isFinishing && !isDestroyed) {
+                    val action = if (source == "KEY") "按键" else "触控"
+                    val page = if (direction == "NEXT") "下一页" else "上一页"
+                    val result = if (rippleSent) "接口已下发" else "接口未下发"
+                    binding.setupLastEvent.text = "最近事件：$action · $page · $rawCode · $result"
+                }
+            }
+        }
+        override fun onLog(message: String) {
+            if (message.contains("接口旋转=")) runOnUiThread {
+                if (!isFinishing && !isDestroyed) binding.setupLastCommand.text = "最近接口：$message"
+            }
+            if (message.contains("输入事件监听已退出") || message.contains("输入事件监听异常")) runOnUiThread {
+                if (!isFinishing && !isDestroyed) {
+                    isListening = false
+                    setupToggleButton.text = "开启监听"
+                    setupListenerStatus.text = "状态：输入监听已中断"
+                }
+            }
+        }
+    }
+    private val configListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key in setOf("is_waterfall", "reverse_animation", "ireader_speed", "speed", "hanvon_speed") &&
+            touchService != null && !serviceExecutor.isShutdown) {
+            serviceExecutor.execute {
+                try { applySettingsToService() }
+                catch (_: Throwable) {
+                    runOnUiThread { if (!isFinishing && !isDestroyed)
+                        setupListenerStatus.text = "状态：动画配置同步失败" }
+                }
+            }
+        }
+    }
     private val handler = Handler(Looper.getMainLooper())
     private val serviceExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "setup-ripple-service-calls")
@@ -74,6 +113,7 @@ open class SetupActivity : AppBarActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = getSharedPreferences("ripple_prefs", MODE_PRIVATE)
+        prefs.registerOnSharedPreferenceChangeListener(configListener)
         targetPackages = prefs.getStringSet("target_pkgs", HashSet())?.toMutableSet() ?: HashSet()
         binding = ActivitySetupBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -136,9 +176,16 @@ open class SetupActivity : AppBarActivity() {
         super.onResume()
         refreshState()
         checkRippleService()
+        if (touchService != null && !serviceExecutor.isShutdown) {
+            serviceExecutor.execute {
+                try { applySettingsToService() }
+                catch (_: Throwable) {}
+            }
+        }
     }
 
     override fun onDestroy() {
+        prefs.unregisterOnSharedPreferenceChangeListener(configListener)
         handler.removeCallbacks(timeoutRunnable)
         try {
             Shizuku.unbindUserService(userServiceArgs(), connection, false)
@@ -165,7 +212,7 @@ open class SetupActivity : AppBarActivity() {
             setupListenerStatus.text = "状态：服务已连接"
             serviceExecutor.execute {
                 try {
-                    touchService?.registerCallback(null)
+                    touchService?.registerCallback(listenerCallback)
                     applySettingsToService()
                     syncListeningState()
                 } catch (_: Throwable) {
@@ -265,7 +312,13 @@ open class SetupActivity : AppBarActivity() {
             serviceExecutor.execute {
                 try {
                     service.startListening()
-                    runOnUiThread { isProcessing = false }
+                    val active = service.isListening
+                    runOnUiThread {
+                        isProcessing = false
+                        isListening = active
+                        setupToggleButton.text = if (active) "停止监听" else "开启监听"
+                        setupListenerStatus.text = if (active) "状态：正在监听" else "状态：监听启动失败"
+                    }
                 } catch (_: Throwable) {
                     runOnUiThread {
                         isListening = false
@@ -290,14 +343,16 @@ open class SetupActivity : AppBarActivity() {
             .sortedBy { it.loadLabel(pm).toString() }
         val names = userApps.map { it.loadLabel(pm).toString() }.toTypedArray()
         val packages = userApps.map { it.packageName }.toTypedArray()
-        val checked = userApps.map { targetPackages.contains(it.packageName) }.toBooleanArray()
+        val draftPackages = targetPackages.toMutableSet()
+        val checked = userApps.map { draftPackages.contains(it.packageName) }.toBooleanArray()
         val dialog = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Light_Dialog_NoActionBar)
             .setTitle("选择需要监听的软件 (可多选)")
             .setMultiChoiceItems(names, checked) { _, which, selected ->
-                if (selected) targetPackages.add(packages[which]) else targetPackages.remove(packages[which])
+                if (selected) draftPackages.add(packages[which]) else draftPackages.remove(packages[which])
             }
             .setPositiveButton("确定") { _, _ ->
                 isProcessing = false
+                targetPackages = draftPackages
                 prefs.edit().putStringSet("target_pkgs", targetPackages).apply()
                 updateTargetButtonText()
                 runServiceCommand { it.setTargetPackages(targetPackages.toTypedArray()) }
