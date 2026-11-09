@@ -15,12 +15,29 @@ void initEpdc(JNIEnv *env) {
 }
 extern "C" JNIEXPORT jboolean JNICALL Java_moe_shizuku_manager_ripple_EpdcHelper_nativeSendPageH(JNIEnv *env, jobject, jint effect) {
     initEpdc(env);
-    if (!gForceMethod || (!gPostMethod1 && !gPostMethod2)) return JNI_FALSE;
-    char cmd[64]; snprintf(cmd, sizeof(cmd), "next-effect-type %d", effect);
+    if (!gForceMethod || (!gPostMethod1 && !gPostMethod2)) {
+        clearException(env);
+        return JNI_FALSE;
+    }
+    char cmd[64];
+    snprintf(cmd, sizeof(cmd), "next-effect-type %d", effect);
     jstring jcmd = env->NewStringUTF(cmd);
-    if (gPostMethod1) env->CallStaticIntMethod(gEpdcClass, gPostMethod1, jcmd);
-    else if (gPostMethod2) env->CallStaticIntMethod(gEpdcClass, gPostMethod2, jcmd, nullptr);
+    if (!jcmd || env->ExceptionCheck()) {
+        clearException(env);
+        return JNI_FALSE;
+    }
+    const jint posted = gPostMethod1
+        ? env->CallStaticIntMethod(gEpdcClass, gPostMethod1, jcmd)
+        : env->CallStaticIntMethod(gEpdcClass, gPostMethod2, jcmd, nullptr);
+    if (env->ExceptionCheck()) {
+        clearException(env);
+        env->DeleteLocalRef(jcmd);
+        return JNI_FALSE;
+    }
     env->CallStaticVoidMethod(gEpdcClass, gForceMethod, 0x01000063);
-    env->DeleteLocalRef(jcmd); clearException(env);
-    return JNI_TRUE;
+    const bool forceOk = !env->ExceptionCheck();
+    if (!forceOk) clearException(env);
+    env->DeleteLocalRef(jcmd);
+    // API accepted != visible waveform; negative post result is a vendor failure.
+    return forceOk && posted >= 0 ? JNI_TRUE : JNI_FALSE;
 }
